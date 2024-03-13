@@ -57,16 +57,18 @@ class Node:
     action_type = NodeType.ATOMIC_NOP
     mem_loc = -1
     t_id = -1
+    value = -1
 
-    def __init__(self, node_id, node_edges, action_type, mem_loc, thread_id):
+    def __init__(self, node_id, node_edges, action_type, mem_loc, thread_id, value):
         self.id = node_id
         self.edges = node_edges
         self.action_type = action_type
         self.mem_loc = mem_loc
         self.t_id = thread_id
+        self.value = value
 
     def __str__(self):
-        return f'MyClass(id={self.id}, mem_loc={self.mem_loc}, t_id={self.t_id}, type={self.action_type})'
+        return f'MyClass(id={self.id}, mem_loc={self.mem_loc}, t_id={self.t_id}, type={self.action_type}, value={self.value})'
 
 class Graph:
     nodes = {}
@@ -81,7 +83,7 @@ class Graph:
         #print(graphDF)
         for index, row in graphDF.iterrows():
             #print(Node(row["#"],{},row["action_type"],row["location"],row["t"]))
-            self.nodes[row["#"]] = Node(row["#"],{},row["action_type"],row["location"],row["t"])
+            self.nodes[row["#"]] = Node(row["#"],{},row["action_type"],row["location"],row["t"], row["value"])
 
     def add_po_edges(self):
         edges = []
@@ -96,8 +98,8 @@ class Graph:
                 next_node = self.nodes[next_node_id]
 
                 # this is the first event in the thread,
-                # connect 
-                if 
+                # connect it to
+                
 
                 # Found next edge in the same thread.
                 # Create and add new edge
@@ -110,6 +112,17 @@ class Graph:
 
         #print(edges)
 
+    # Binds values to threads ids to track thread splits.
+    # Creates dictionary indexed with value of thread split
+    # event. Dictionary contains t_id and number of threads created.
+    def thread_splits(self):
+        splits = {}
+        for node_no in self.node.keys():
+            node = node[node_no]
+
+            if node.action_type == NodeType.THREAD_START:
+                if node.id not in splits.keys():
+                    splits[node.id] = {"value": 0}
 
     def add_mo_edges(self):
         pass
