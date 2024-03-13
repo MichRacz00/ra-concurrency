@@ -46,15 +46,15 @@ class NodeType(Enum):
 class Edge:
     in_node = -1
     out_node = -1
-    node_type = EdgeType.PO
+    edge_type = EdgeType.PO
 
-    def __init__(self, in_node, out_node, node_type):
+    def __init__(self, in_node, out_node, edge_type):
         self.in_node = in_node
         self.out_node = out_node
-        self.node_type = node_type
+        self.edge_type = edge_type
 
     def __str__(self):
-        return f'MyClass(from={self.in_node}, to={self.out_node}, type={self.node_type})'
+        return f'MyClass(from={self.in_node}, to={self.out_node}, type={self.edge_type})'
 
 class Node:
     id = -1
