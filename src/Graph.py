@@ -43,6 +43,7 @@ class NodeType(Enum):
                 return member
         raise ValueError(f'{value} is not a valid NodeType value')
 
+#TODO: not really needed due to the way we structured data, possibly remove
 class Edge:
     in_node = -1
     out_node = -1
@@ -58,7 +59,7 @@ class Edge:
 
 class Node:
     id = -1
-    edges = {} # 1 -> 2 edges[2] = Edge(1,2,type    )
+    edges: dict[int, dict[EdgeType, Edge]] = {} # 1 -> 2 edges[2] = Edge(1,2,type    )
     action_type = NodeType.ATOMIC_INIT
     mem_loc = -1
     t_id = -1
@@ -78,7 +79,7 @@ class Graph:
     rawData = None
 
     def __init__(self, nodes, rawDataPath):
-        self.nodes = nodes
+        self.nodes: dict[int, Node] = nodes
         self.rawData = pd.read_csv(rawDataPath)
         self.add_nodes(self.rawData)
         
@@ -108,7 +109,23 @@ class Graph:
             print(prevIndex)
     
     def add_rf_edges(self):
-        pass
+        for read_id, read_node in self.nodes.items():
+            if not (read_node.action_type == NodeType.ATOMIC_READ or read_node.action_type == NodeType.ATOMIC_RMW):
+                continue
+            #find last write w
+            #add edge (w, id)
+            curr_id = read_id - 1
+            while True:
+                if curr_id == 0:
+                    raise Exception(f"No write found for read id {read_id}")
+                curr_node = self.nodes[curr_id]
+                if (curr_node.action_type == NodeType.ATOMIC_WRITE or 
+                        curr_node.action_type == NodeType.ATOMIC_RMW) and curr_node.mem_loc == read_node.mem_loc:
+                    if not read_id in curr_node.edges:
+                        curr_node.edges[read_id] = {}
+                    curr_node.edges[read_id][EdgeType.RF] = (Edge(curr_id, read_id, EdgeType.RF))
+                    break
+                curr_id -= 1
 
     def add_fr_edges(self):
         pass
@@ -123,5 +140,6 @@ class Graph:
 graph = Graph({},"../data_race.csv")
 print(len(graph.nodes))
 graph.add_mo_edges()
+graph.add_rf_edges()
 for node in graph.nodes:
     print(graph.nodes[node])
