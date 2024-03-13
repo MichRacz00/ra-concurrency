@@ -1,4 +1,4 @@
-from enum import Enum, auto()
+from enum import Enum, auto
 import pandas as pd
 
 class EdgeType(Enum):
@@ -48,9 +48,12 @@ class Edge:
         self.out_node = out_node
         self.node_type = node_type
 
+    def __str__(self):
+        return f'MyClass(from={self.in_node}, to={self.out_node}, type={self.node_type})'
+
 class Node:
     id = -1
-    edges = []
+    edges = {}
     action_type = NodeType.ATOMIC_NOP
     mem_loc = -1
     t_id = -1
@@ -62,30 +65,42 @@ class Node:
         self.mem_loc = mem_loc
         self.t_id = thread_id
 
+    def __str__(self):
+        return f'MyClass(id={self.id}, mem_loc={self.mem_loc}, t_id={self.t_id}, type={self.action_type})'
+
 class Graph:
-    nodes = []
-    edges = []
+    nodes = {}
     rawData = None
 
-    def __init__(self, nodes, edges, rawDataPath):
+    def __init__(self, nodes, rawDataPath):
         self.nodes = nodes
-        self.edges = edges
         self.rawData = pd.read_csv(rawDataPath)
-    
-    def add_po_edges():
+        self.add_nodes(self.rawData)
+        
+    def add_nodes(self,graphDF):
+        print(graphDF)
+        for index, row in graphDF.iterrows():
+            print(Node(row["#"],{},row["action_type"],row["location"],row["t"]))
+            self.nodes[row["#"]] = Node(row["#"],{},row["action_type"],row["location"],row["t"])
+
+    def add_po_edges(self):
         pass
 
-    def add_mo_edges():
+    def add_mo_edges(self):
         pass
 
-    def add_rf_edges():
+    def add_rf_edges(self):
         pass
 
-    def add_fr_edges():
+    def add_fr_edges(self):
         pass
 
-    def add_hb_edges():
+    def add_hb_edges(self):
         pass
 
     def has_data_races():
         pass
+
+
+graph = Graph({},"../data_race.csv")
+print(len(graph.nodes))
