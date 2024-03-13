@@ -46,15 +46,15 @@ class NodeType(Enum):
 class Edge:
     in_node = -1
     out_node = -1
-    node_type = EdgeType.PO
+    edge_type = EdgeType.PO
 
-    def __init__(self, in_node, out_node, node_type):
+    def __init__(self, in_node, out_node, edge_type):
         self.in_node = in_node
         self.out_node = out_node
-        self.node_type = node_type
+        self.node_type = edge_type
 
     def __str__(self):
-        return f'MyClass(from={self.in_node}, to={self.out_node}, type={self.node_type})'
+        return f'Edge(from={self.in_node}, to={self.out_node}, type={self.node_type})'
 
 class Node:
     id = -1
@@ -71,7 +71,7 @@ class Node:
         self.t_id = thread_id
 
     def __str__(self):
-        return f'MyClass(id={self.id}, mem_loc={self.mem_loc}, t_id={self.t_id}, type={self.action_type})'
+        return f'Node(id={self.id}, mem_loc={self.mem_loc}, t_id={self.t_id}, type={self.action_type}, edges={self.edges})'
 
 class Graph:
     nodes = {}
@@ -91,9 +91,22 @@ class Graph:
     def add_po_edges(self):
         pass
 
+    #assuming rmw is write
     def add_mo_edges(self):
-        pass
-    
+        print(NodeType.ATOMIC_READ.value)
+        filtered_df = self.rawData[self.rawData['action_type'].isin([NodeType.ATOMIC_WRITE.value, NodeType.ATOMIC_RMW.value])]
+        prevIndex = -1
+        print(filtered_df)
+        for index, row in filtered_df.iterrows():
+            if prevIndex == -1:
+                prevIndex = row['#']
+                continue
+
+            if not row['#'] in self.nodes[prevIndex].edges:
+                self.nodes[prevIndex].edges[row['#']] = {}
+            self.nodes[prevIndex].edges[row['#']][EdgeType.MO] = Edge(prevIndex, row['#'], EdgeType.MO)
+            prevIndex = row['#']
+            print(prevIndex)
     def add_rf_edges(self):
         pass
 
@@ -110,3 +123,5 @@ class Graph:
 graph = Graph({},"../data_race.csv")
 print(len(graph.nodes))
 graph.add_mo_edges()
+for node in graph.nodes:
+    print(graph.nodes[node])
