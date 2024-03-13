@@ -78,13 +78,38 @@ class Graph:
         self.add_nodes(self.rawData)
         
     def add_nodes(self,graphDF):
-        print(graphDF)
+        #print(graphDF)
         for index, row in graphDF.iterrows():
-            print(Node(row["#"],{},row["action_type"],row["location"],row["t"]))
+            #print(Node(row["#"],{},row["action_type"],row["location"],row["t"]))
             self.nodes[row["#"]] = Node(row["#"],{},row["action_type"],row["location"],row["t"])
 
     def add_po_edges(self):
-        pass
+        edges = []
+
+        for node_no in self.nodes.keys():
+            current_node = self.nodes[node_no]
+
+            # iterate throught the remaining nodes
+            # to find the next node in the same thread
+            keys = list(self.nodes.keys())
+            for next_node_id in keys[node_no:]:
+                next_node = self.nodes[next_node_id]
+
+                # this is the first event in the thread,
+                # connect 
+                if 
+
+                # Found next edge in the same thread.
+                # Create and add new edge
+                if next_node.t_id == current_node.t_id:
+                    new_po_edge = Edge(current_node, next_node, EdgeType.PO)
+                    edges.append(new_po_edge)
+                    #current_node.edges.append(new_po_edge)
+                    print(current_node.id, next_node.id)
+                    break
+
+        #print(edges)
+
 
     def add_mo_edges(self):
         pass
@@ -103,4 +128,5 @@ class Graph:
 
 
 graph = Graph({},"../data_race.csv")
-print(len(graph.nodes))
+#print(len(graph.nodes))
+graph.add_po_edges()
