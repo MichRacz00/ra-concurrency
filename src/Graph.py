@@ -9,34 +9,39 @@ class EdgeType(Enum):
     HB = auto()
 
 class NodeType(Enum):
-    THREAD_CREATE = auto()
-    THREAD_START = auto()
-    THREAD_YIELD = auto()
-    THREAD_JOIN = auto()
-    THREAD_FINISH = auto()
-    THREADONLY_FINISH = auto()
-    THREAD_SLEEP = auto()
-    PTHREAD_CREATE = auto()
-    PTHREAD_JOIN = auto()
-    NONATOMIC_WRITE = auto()
-    ATOMIC_INIT = auto()
-    ATOMIC_WRITE = auto()
-    ATOMIC_RMW = auto()
-    ATOMIC_READ = auto()
-    ATOMIC_RMWR = auto()
-    ATOMIC_RMWRCAS = auto()
-    ATOMIC_RMWC = auto()
-    ATOMIC_FENCE = auto()
-    ATOMIC_LOCK = auto()
-    ATOMIC_TRYLOCK = auto()
-    ATOMIC_UNLOCK = auto()
-    ATOMIC_NOTIFY_ONE = auto()
-    ATOMIC_NOTIFY_ALL = auto()
-    ATOMIC_WAIT = auto()
-    ATOMIC_TIMEDWAIT = auto()
-    ATOMIC_ANNOTATION = auto()
-    READY_FREE = auto()
-    ATOMIC_NOP = auto()
+    THREAD_CREATE = "thread create"
+    THREAD_START = "thread start"
+    THREAD_YIELD = "thread yield"
+    THREAD_JOIN = "thread join"
+    THREAD_FINISH = "thread finish"
+    THREAD_SLEEP = "thread sleep"
+    THREADONLY_FINISH = "pthread_exit finish"
+    PTHREAD_CREATE = "pthread create"
+    PTHREAD_JOIN = "pthread join"
+    NONATOMIC_WRITE = "nonatomic write"
+    ATOMIC_READ = "atomic read"
+    ATOMIC_WRITE = "atomic write"
+    ATOMIC_RMW = "atomic rmw"
+    ATOMIC_FENCE = "fence"
+    ATOMIC_RMWR = "atomic rmwr"
+    ATOMIC_RMWRCAS = "atomic rmwrcas"
+    ATOMIC_RMWC = "atomic rmwc"
+    ATOMIC_INIT = "init atomic"
+    ATOMIC_LOCK = "lock"
+    ATOMIC_UNLOCK = "unlock"
+    ATOMIC_TRYLOCK = "trylock"
+    ATOMIC_WAIT = "wait"
+    ATOMIC_TIMEDWAIT = "timed wait"
+    ATOMIC_NOTIFY_ONE = "notify one"
+    ATOMIC_NOTIFY_ALL = "notify all"
+    ATOMIC_ANNOTATION = "annotation"
+
+
+    def from_string(value):
+        for member in NodeType:
+            if member.value == value:
+                return member
+        raise ValueError(f'{value} is not a valid NodeType value')
 
 class Edge:
     in_node = -1
@@ -53,8 +58,8 @@ class Edge:
 
 class Node:
     id = -1
-    edges = {}
-    action_type = NodeType.ATOMIC_NOP
+    edges = {} # 1 -> 2 edges[2] = Edge(1,2,type    )
+    action_type = NodeType.ATOMIC_INIT
     mem_loc = -1
     t_id = -1
 
@@ -81,14 +86,14 @@ class Graph:
         print(graphDF)
         for index, row in graphDF.iterrows():
             print(Node(row["#"],{},row["action_type"],row["location"],row["t"]))
-            self.nodes[row["#"]] = Node(row["#"],{},row["action_type"],row["location"],row["t"])
+            self.nodes[row["#"]] = Node(row["#"],{},NodeType.from_string(row["action_type"]),row["location"],row["t"])
 
     def add_po_edges(self):
         pass
 
     def add_mo_edges(self):
         pass
-
+    
     def add_rf_edges(self):
         pass
 
@@ -104,3 +109,4 @@ class Graph:
 
 graph = Graph({},"../data_race.csv")
 print(len(graph.nodes))
+graph.add_mo_edges()
