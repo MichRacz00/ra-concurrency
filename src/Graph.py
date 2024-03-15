@@ -83,19 +83,23 @@ class Graph:
     def add_po_edges(self):
         edges = []
         splits = self.thread_splits()
-
         for node_no in self.nodes.keys():
             current_node = self.nodes[node_no]
+
+            # this is the first event in the thread
+            if current_node.action_type == NodeType.THREAD_START:
+                origin_id = splits[current_node.value]["origin"]
+                origin_node = self.nodes[origin_id]
+                if current_node.id == origin_id:
+                    continue
+                self.edges[EdgeType.PO][origin_node] = current_node.id
 
             # iterate throught the remaining nodes
             # to find the next node in the same thread
             keys = list(self.nodes.keys())
             for next_node_id in keys[node_no:]:
                 next_node = self.nodes[next_node_id]
-
-                # this is the first event in the thread,
                 
-
                 # Found next edge in the same thread.
                 # Create and add new edge
                 if next_node.t_id == current_node.t_id:
@@ -103,8 +107,6 @@ class Graph:
                     #current_node.edges.append(new_po_edge)
                     #print(current_node.id, next_node.id)
                     break
-
-        #print(edges)
 
     # Binds values to threads ids to track thread splits.
     # Creates dictionary indexed with value of thread split
@@ -114,11 +116,12 @@ class Graph:
         for node_no in self.nodes.keys():
             node = self.nodes[node_no]
 
-            if node.action_type == NodeType.THREAD_START.value:
+            if node.action_type == NodeType.THREAD_START:
                 if node.value not in splits.keys():
-                    splits[node.value] = {"t_id": 0, "t_num": 0}
+                    splits[node.value] = {"origin": node.id, "t_num": node.t_id}
                 else:
-                    splits[node.value]["t_num"] += 1
+                    pass
+                    #splits[node.value]["origins"] = [node.id] + splits[node.value]["origins"]
         return splits
 
     def add_mo_edges(self):
@@ -165,8 +168,4 @@ class Graph:
 
 
 graph = Graph({},"../data_race.csv")
-print(len(graph.nodes))
-graph.add_mo_edges()
-graph.add_rf_edges()
-for node in graph.nodes:
-    print(graph.nodes[node])
+graph.add_po_edges()
