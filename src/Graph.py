@@ -88,11 +88,14 @@ class Graph:
 
             # this is the first event in the thread
             if current_node.action_type == NodeType.THREAD_START:
-                origin_id = splits[current_node.value]["origin"]
-                origin_node = self.nodes[origin_id]
-                if current_node.id == origin_id:
-                    continue
-                self.edges[EdgeType.PO][origin_node] = current_node.id
+                split = splits[current_node.value]
+
+                # assuming thread start is in the previous instruction
+                origin_id = split["origins"].pop() - 1
+                if origin_id > 0:
+                    origin_node = self.nodes[origin_id]
+                    self.edges[EdgeType.PO][origin_node.id] = current_node.id
+                    #print(origin_id, current_node.id)
 
             # iterate throught the remaining nodes
             # to find the next node in the same thread
@@ -104,8 +107,6 @@ class Graph:
                 # Create and add new edge
                 if next_node.t_id == current_node.t_id:
                     self.edges[EdgeType.PO][current_node.id] = next_node.id
-                    #current_node.edges.append(new_po_edge)
-                    #print(current_node.id, next_node.id)
                     break
 
     # Binds values to threads ids to track thread splits.
@@ -118,10 +119,9 @@ class Graph:
 
             if node.action_type == NodeType.THREAD_START:
                 if node.value not in splits.keys():
-                    splits[node.value] = {"origin": node.id, "t_num": node.t_id}
+                    splits[node.value] = {"origins": [node.id], "t_num": node.t_id}
                 else:
-                    pass
-                    #splits[node.value]["origins"] = [node.id] + splits[node.value]["origins"]
+                    splits[node.value]["origins"] = [node.id] + splits[node.value]["origins"]
         return splits
 
     def add_mo_edges(self):
