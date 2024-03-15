@@ -91,6 +91,7 @@ class Graph:
 
     def add_po_edges(self):
         edges = []
+        splits = self.thread_splits()
 
         for node_no in self.nodes.keys():
             current_node = self.nodes[node_no]
@@ -102,7 +103,7 @@ class Graph:
                 next_node = self.nodes[next_node_id]
 
                 # this is the first event in the thread,
-                # connect it to
+                # connect it to event where thread was spawned
                 
 
                 # Found next edge in the same thread.
