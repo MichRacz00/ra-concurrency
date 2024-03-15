@@ -43,23 +43,8 @@ class NodeType(Enum):
                 return member
         raise ValueError(f'{value} is not a valid NodeType value')
 
-#TODO: not really needed due to the way we structured data, possibly remove
-class Edge:
-    in_node = -1
-    out_node = -1
-    edge_type = EdgeType.PO
-
-    def __init__(self, in_node, out_node, edge_type):
-        self.in_node = in_node
-        self.out_node = out_node
-        self.edge_type = edge_type
-
-    def __str__(self):
-        return f'Edge(from={self.in_node}, to={self.out_node}, type={self.edge_type})'
-
 class Node:
     id = -1
-    edges: dict[int, dict[EdgeType, Edge]] = {} # 1 -> 2 edges[2] = Edge(1,2,type    )
     action_type = NodeType.ATOMIC_INIT
     mem_loc = -1
     t_id = -1
@@ -79,11 +64,14 @@ class Node:
 class Graph:
     nodes = {}
     rawData = None
+    # Dict of all edges in graph edgetype->dict[in -> out]
+    edges: dict[EdgeType, dict[int, int]] = {}
 
     def __init__(self, nodes, rawDataPath):
         self.nodes: dict[int, Node] = nodes
         self.rawData = pd.read_csv(rawDataPath)
         self.add_nodes(self.rawData)
+        self.edges = {EdgeType.PO: {}, EdgeType.MO: {}, EdgeType.RF: {}, EdgeType.FR: {}, EdgeType.HB: {}}
         
     def add_nodes(self,graphDF):
         #print(graphDF)
@@ -109,8 +97,7 @@ class Graph:
                 # Found next edge in the same thread.
                 # Create and add new edge
                 if next_node.t_id == current_node.t_id:
-                    new_po_edge = Edge(current_node, next_node, EdgeType.PO)
-                    edges.append(new_po_edge)
+                    self.edges[EdgeType.PO][current_node.id] = next_node.id
                     #current_node.edges.append(new_po_edge)
                     #print(current_node.id, next_node.id)
                     break
@@ -144,7 +131,7 @@ class Graph:
 
             if not row['#'] in self.nodes[prevIndex].edges:
                 self.nodes[prevIndex].edges[row['#']] = {}
-            self.nodes[prevIndex].edges[row['#']][EdgeType.MO] = Edge(prevIndex, row['#'], EdgeType.MO)
+            self.edges[EdgeType.MO][prevIndex] = row['#']
             prevIndex = row['#']
             print(prevIndex)
     
@@ -161,9 +148,7 @@ class Graph:
                 curr_node = self.nodes[curr_id]
                 if (curr_node.action_type == NodeType.ATOMIC_WRITE or 
                         curr_node.action_type == NodeType.ATOMIC_RMW) and curr_node.mem_loc == read_node.mem_loc:
-                    if not read_id in curr_node.edges:
-                        curr_node.edges[read_id] = {}
-                    curr_node.edges[read_id][EdgeType.RF] = (Edge(curr_id, read_id, EdgeType.RF))
+                    self.edges[EdgeType.RF][curr_id] = read_id
                     break
                 curr_id -= 1
 
