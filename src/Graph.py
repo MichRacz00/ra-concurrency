@@ -9,34 +9,32 @@ class EdgeType(Enum):
     HB = auto()
 
 class NodeType(Enum):
-    THREAD_CREATE = auto()
-    THREAD_START = auto()
-    THREAD_YIELD = auto()
-    THREAD_JOIN = auto()
-    THREAD_FINISH = auto()
-    THREADONLY_FINISH = auto()
-    THREAD_SLEEP = auto()
-    PTHREAD_CREATE = auto()
-    PTHREAD_JOIN = auto()
-    NONATOMIC_WRITE = auto()
-    ATOMIC_INIT = auto()
-    ATOMIC_WRITE = auto()
-    ATOMIC_RMW = auto()
-    ATOMIC_READ = auto()
-    ATOMIC_RMWR = auto()
-    ATOMIC_RMWRCAS = auto()
-    ATOMIC_RMWC = auto()
-    ATOMIC_FENCE = auto()
-    ATOMIC_LOCK = auto()
-    ATOMIC_TRYLOCK = auto()
-    ATOMIC_UNLOCK = auto()
-    ATOMIC_NOTIFY_ONE = auto()
-    ATOMIC_NOTIFY_ALL = auto()
-    ATOMIC_WAIT = auto()
-    ATOMIC_TIMEDWAIT = auto()
-    ATOMIC_ANNOTATION = auto()
-    READY_FREE = auto()
-    ATOMIC_NOP = auto()
+    THREAD_CREATE = "thread create"
+    THREAD_START = "thread start"
+    THREAD_YIELD = "thread yield"
+    THREAD_JOIN = "thread join"
+    THREAD_FINISH = "thread finish"
+    THREAD_SLEEP = "thread sleep"
+    THREADONLY_FINISH = "pthread_exit finish"
+    PTHREAD_CREATE = "pthread create"
+    PTHREAD_JOIN = "pthread join"
+    NONATOMIC_WRITE = "nonatomic write"
+    ATOMIC_READ = "atomic read"
+    ATOMIC_WRITE = "atomic write"
+    ATOMIC_RMW = "atomic rmw"
+    ATOMIC_FENCE = "fence"
+    ATOMIC_RMWR = "atomic rmwr"
+    ATOMIC_RMWRCAS = "atomic rmwrcas"
+    ATOMIC_RMWC = "atomic rmwc"
+    ATOMIC_INIT = "init atomic"
+    ATOMIC_LOCK = "lock"
+    ATOMIC_UNLOCK = "unlock"
+    ATOMIC_TRYLOCK = "trylock"
+    ATOMIC_WAIT = "wait"
+    ATOMIC_TIMEDWAIT = "timed wait"
+    ATOMIC_NOTIFY_ONE = "notify one"
+    ATOMIC_NOTIFY_ALL = "notify all"
+    ATOMIC_ANNOTATION = "annotation"
 
 class Edge:
     in_node = -1
@@ -54,7 +52,7 @@ class Edge:
 class Node:
     id = -1
     edges = {}
-    action_type = NodeType.ATOMIC_NOP
+    action_type = NodeType.ATOMIC_INIT
     mem_loc = -1
     t_id = -1
     value = -1
@@ -107,7 +105,7 @@ class Graph:
                     new_po_edge = Edge(current_node, next_node, EdgeType.PO)
                     edges.append(new_po_edge)
                     #current_node.edges.append(new_po_edge)
-                    print(current_node.id, next_node.id)
+                    #print(current_node.id, next_node.id)
                     break
 
         #print(edges)
@@ -117,12 +115,15 @@ class Graph:
     # event. Dictionary contains t_id and number of threads created.
     def thread_splits(self):
         splits = {}
-        for node_no in self.node.keys():
-            node = node[node_no]
+        for node_no in self.nodes.keys():
+            node = self.nodes[node_no]
 
-            if node.action_type == NodeType.THREAD_START:
-                if node.id not in splits.keys():
-                    splits[node.id] = {"value": 0}
+            if node.action_type == NodeType.THREAD_START.value:
+                if node.value not in splits.keys():
+                    splits[node.value] = {"t_id": 0, "t_num": 0}
+                else:
+                    splits[node.value]["t_num"] += 1
+        return splits
 
     def add_mo_edges(self):
         pass
@@ -141,5 +142,4 @@ class Graph:
 
 
 graph = Graph({},"../data_race.csv")
-#print(len(graph.nodes))
-graph.add_po_edges()
+print(graph.thread_splits())
