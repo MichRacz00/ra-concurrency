@@ -155,7 +155,9 @@ class Graph:
                 curr_id -= 1
 
     def add_fr_edges(self):
-        pass
+        for id in self.nodes.keys():
+            if id in self.edges[EdgeType.RF] and id in self.edges[EdgeType.MO]:
+                self.edges[EdgeType.FR][self.edges[EdgeType.RF][id]] = self.edges[EdgeType.MO][id]
 
     def add_hb_edges(self):
         pass
