@@ -1,5 +1,6 @@
 from enum import Enum, auto
 import pandas as pd
+import copy
 
 class EdgeType(Enum):
     MO = auto()
@@ -125,10 +126,8 @@ class Graph:
         return splits
 
     def add_mo_edges(self):
-        print(NodeType.ATOMIC_READ.value)
         filtered_df = self.rawData[self.rawData['action_type'].isin([NodeType.ATOMIC_WRITE.value, NodeType.ATOMIC_RMW.value])]
         prevIndex = -1
-        print(filtered_df)
         for index, row in filtered_df.iterrows():
             if prevIndex == -1:
                 prevIndex = row['#']
@@ -138,7 +137,6 @@ class Graph:
                 self.nodes[prevIndex].edges[row['#']] = {}
             self.edges[EdgeType.MO][prevIndex] = row['#']
             prevIndex = row['#']
-            print(prevIndex)
     
     def add_rf_edges(self):
         for read_id, read_node in self.nodes.items():
@@ -163,7 +161,46 @@ class Graph:
                 self.edges[EdgeType.FR][self.edges[EdgeType.RF][id]] = self.edges[EdgeType.MO][id]
 
     def add_hb_edges(self):
-        pass
+        for id in self.nodes.keys():
+            if id in self.edges[EdgeType.PO].keys():
+                destination_id = self.edges[EdgeType.PO][id]
+                if destination_id not in self.edges[EdgeType.HB].keys():
+                    self.edges[EdgeType.HB][id] = set()
+                self.edges[EdgeType.HB][id].add(destination_id)
+
+            if id in self.edges[EdgeType.RF].keys():
+                destination_id = self.edges[EdgeType.RF][id]
+                if destination_id not in self.edges[EdgeType.HB].keys():
+                    self.edges[EdgeType.HB][id] = set()
+                self.edges[EdgeType.HB][id].add(destination_id)
+
+        self.__hb_transitive()
+        print(self.edges[EdgeType.HB])
+
+    def __hb_transitive(self):
+        # Iterate untill no new relations are added
+        while True:
+            # Keep a copy of HB relation to see if new relations were added
+            hb_relation_copy = copy.deepcopy(self.edges[EdgeType.HB])
+
+            # Initialize a dictionary to collect the transitive relation
+            transitive = {}
+
+            for origin_id, destination_ids in self.edges[EdgeType.HB].items():
+                # Iterate over a copy of the set to not alter it in the loop
+                for destination_id in destination_ids.copy():
+                    if destination_id in self.edges[EdgeType.HB]:
+                        next_destination_ids = self.edges[EdgeType.HB][destination_id]
+                        transitive.setdefault(origin_id, set()).update(next_destination_ids)
+
+            # Merge collected transitive relation
+            for origin_id, next_destination_ids in transitive.items():
+                self.edges[EdgeType.HB][origin_id].update(next_destination_ids)
+
+            # If no new relations were added, transitive property was exhausted
+            if self.edges[EdgeType.HB] == hb_relation_copy:
+                return
+
 
     def has_data_races():
         pass
@@ -171,3 +208,8 @@ class Graph:
 
 graph = Graph({},"../data_race.csv")
 graph.add_po_edges()
+graph.add_rf_edges()
+graph.add_mo_edges()
+graph.add_fr_edges()
+graph.add_hb_edges()
+
