@@ -1,6 +1,11 @@
 from enum import Enum, auto
 import pandas as pd
 import copy
+import networkx as nx
+import matplotlib.pyplot as plt
+import itertools as it
+import math
+
 
 class EdgeType(Enum):
     MO = auto()
@@ -66,6 +71,7 @@ class Graph:
     nodes = {}
     rawData = None
     # Dict of all edges in graph edgetype->dict[in -> out]
+    # TODO: Type does not checkout for HB as it can go to multiple
     edges: dict[EdgeType, dict[int, int]] = {}
 
     def __init__(self, nodes, rawDataPath):
@@ -145,9 +151,7 @@ class Graph:
             #find last write w
             #add edge (w, id)
             curr_id = read_id - 1
-            while True:
-                if curr_id == 0:
-                    raise Exception(f"No write found for read id {read_id}")
+            while curr_id > 0:
                 curr_node = self.nodes[curr_id]
                 if (curr_node.action_type == NodeType.ATOMIC_WRITE or 
                         curr_node.action_type == NodeType.ATOMIC_RMW) and curr_node.mem_loc == read_node.mem_loc:
@@ -205,11 +209,38 @@ class Graph:
     def has_data_races():
         pass
 
+    def visualize(self):
+        G = nx.MultiDiGraph()
+        G.add_nodes_from(self.nodes.keys())
+        G.add_edges_from(self.edges[EdgeType.MO].items(), label="MO", color="orange")
+        G.add_edges_from(self.edges[EdgeType.PO].items(), label="PO", color="black")
+        G.add_edges_from(self.edges[EdgeType.RF].items(), label="RF", color="green")
+        G.add_edges_from(self.edges[EdgeType.FR].items(), label="FR", color="red")
+        G.remove_nodes_from([i for i in range(10,len(self.nodes)+1)])
+        # G.add_edges_from(self.edges[EdgeType.HB].items(), label="HB")
+        # pos = nx.random_layout(G)
+        # colors = nx.get_edge_attributes(G, "color").values()
+        # nx.draw(G, pos, with_labels=True, edge_color=colors)
+        # #nx.draw_networkx_edge_labels(G, pos, nx.get_edge_attributes(G, "label"))
+        # plt.show()
+        connectionstyle = [f"arc3,rad={r}" for r in it.accumulate([0.15] * 4)]
+        # connectionstyle = [f"angle3,angleA={r}" for r in it.accumulate([30] * 4)]
 
-graph = Graph({},"../data_race.csv")
+        pos = nx.spring_layout(G, k=5/math.sqrt(len(G.nodes)))
+        nx.draw_networkx_nodes(G, pos)
+        nx.draw_networkx_labels(G, pos, font_size=12)
+        colors = nx.get_edge_attributes(G, "color").values()
+        nx.draw_networkx_edges(
+            G, pos, edge_color=colors, connectionstyle=connectionstyle
+        )
+        plt.show()
+
+
+graph = Graph({},"../presentation_trace.csv")
 graph.add_po_edges()
 graph.add_rf_edges()
 graph.add_mo_edges()
 graph.add_fr_edges()
 graph.add_hb_edges()
+graph.visualize()
 
