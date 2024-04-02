@@ -145,9 +145,7 @@ class Graph:
             #find last write w
             #add edge (w, id)
             curr_id = read_id - 1
-            while True:
-                if curr_id == 0:
-                    raise Exception(f"No write found for read id {read_id}")
+            while curr_id > 0:
                 curr_node = self.nodes[curr_id]
                 if (curr_node.action_type == NodeType.ATOMIC_WRITE or 
                         curr_node.action_type == NodeType.ATOMIC_RMW) and curr_node.mem_loc == read_node.mem_loc:
@@ -206,7 +204,7 @@ class Graph:
         pass
 
 
-graph = Graph({},"../data_race.csv")
+graph = Graph({},"../presentation_trace.csv")
 graph.add_po_edges()
 graph.add_rf_edges()
 graph.add_mo_edges()
