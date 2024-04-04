@@ -175,7 +175,6 @@ class Graph:
                 self.edges[EdgeType.HB][id].add(destination_id)
 
         self.__hb_transitive()
-        print(self.edges[EdgeType.HB])
 
     def __hb_transitive(self):
         # Iterate untill no new relations are added
@@ -201,15 +200,16 @@ class Graph:
             if self.edges[EdgeType.HB] == hb_relation_copy:
                 return
 
-
     def has_data_races():
         pass
 
 
-graph = Graph({},"../data_race.csv")
+graph = Graph({},"../presentation_trace.csv")
 graph.add_po_edges()
-graph.add_rf_edges()
-graph.add_mo_edges()
-graph.add_fr_edges()
-graph.add_hb_edges()
+for origin in graph.edges[EdgeType.PO].keys():
+    print(origin, "->", graph.edges[EdgeType.PO][origin])
+#graph.add_rf_edges()
+#graph.add_mo_edges()
+#graph.add_fr_edges()
+#graph.add_hb_edges()
 
