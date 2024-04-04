@@ -13,6 +13,7 @@ class EdgeType(Enum):
     RF = auto()
     FR = auto()
     HB = auto()
+    CONC = auto()
 
 class NodeType(Enum):
     THREAD_CREATE = "thread create"
@@ -55,14 +56,16 @@ class Node:
     mem_loc = -1
     t_id = -1
     value = -1
+    mo = None
 
-    def __init__(self, node_id, node_edges, action_type, mem_loc, thread_id, value):
+    def __init__(self, node_id, node_edges, action_type, mem_loc, thread_id, value, mo):
         self.id = node_id
         self.edges = node_edges
         self.action_type = action_type
         self.mem_loc = mem_loc
         self.t_id = thread_id
         self.value = value
+        self.mo = mo
 
     def __str__(self):
         return f'Node(id={self.id}, mem_loc={self.mem_loc}, t_id={self.t_id}, type={self.action_type}, value={self.value})'
@@ -77,32 +80,29 @@ class Graph:
     def __init__(self, nodes, rawDataPath):
         self.nodes: dict[int, Node] = nodes
         self.rawData = pd.read_csv(rawDataPath)
+        self.edges = {EdgeType.PO: {}, EdgeType.MO: {}, EdgeType.RF: {}, EdgeType.FR: {}, EdgeType.HB: {}, EdgeType.CONC: {}}
         self.add_nodes(self.rawData)
-        self.edges = {EdgeType.PO: {}, EdgeType.MO: {}, EdgeType.RF: {}, EdgeType.FR: {}, EdgeType.HB: {}}
-        
+        self.init_edges()
+    
+    def init_edges(self):
+        self.add_po_edges()
+        self.add_mo_edges()
+        self.add_fr_edges()
+        self.add_hb_edges()
+        self.add_conc_edges()
+
     def add_nodes(self,graphDF):
         #print(graphDF)
         for index, row in graphDF.iterrows():
-            #print(Node(row["#"],{},row["action_type"],row["location"],row["t"]))
-            self.nodes[row["#"]] = Node(row["#"],{},NodeType.from_string(row["action_type"]),row["location"],row["t"],row["value"])
-        
+            self.nodes[row["#"]] = Node(row["#"],{},NodeType.from_string(row["action_type"]),row["location"],row["t"],row["value"],row["mo"])
+            if row["rf"] != "?":
+                self.edges[EdgeType.RF][row["#"]] = int(row["rf"])  
 
     def add_po_edges(self):
-        edges = []
-        splits = self.thread_splits()
+        # add
+        self.edges[EdgeType.PO] = self.thread_splits()
         for node_no in self.nodes.keys():
             current_node = self.nodes[node_no]
-
-            # this is the first event in the thread
-            if current_node.action_type == NodeType.THREAD_START:
-                split = splits[current_node.value]
-
-                # assuming thread start is in the previous instruction
-                origin_id = split["origins"].pop() - 1
-                if origin_id > 0:
-                    origin_node = self.nodes[origin_id]
-                    self.edges[EdgeType.PO][origin_node.id] = current_node.id
-                    #print(origin_id, current_node.id)
 
             # iterate throught the remaining nodes
             # to find the next node in the same thread
@@ -113,22 +113,21 @@ class Graph:
                 # Found next edge in the same thread.
                 # Create and add new edge
                 if next_node.t_id == current_node.t_id:
-                    self.edges[EdgeType.PO][current_node.id] = next_node.id
+                    if current_node.id not in self.edges[EdgeType.PO].keys():
+                        self.edges[EdgeType.PO][current_node.id] = set()
+                    self.edges[EdgeType.PO][current_node.id].add(next_node.id)
                     break
 
-    # Binds values to threads ids to track thread splits.
-    # Creates dictionary indexed with value of thread split
-    # event. Dictionary contains t_id and number of threads created.
     def thread_splits(self):
         splits = {}
         for node_no in self.nodes.keys():
             node = self.nodes[node_no]
 
-            if node.action_type == NodeType.THREAD_START:
-                if node.value not in splits.keys():
-                    splits[node.value] = {"origins": [node.id], "t_num": node.t_id}
-                else:
-                    splits[node.value]["origins"] = [node.id] + splits[node.value]["origins"]
+            if node.action_type == NodeType.PTHREAD_CREATE:
+                for prev_node_no in range(node_no, len(self.nodes)):
+                    if self.nodes[prev_node_no].action_type == NodeType.THREAD_START:
+                        splits[node_no] = {prev_node_no}
+                        break
         return splits
 
     def add_mo_edges(self):
@@ -143,21 +142,6 @@ class Graph:
                 self.nodes[prevIndex].edges[row['#']] = {}
             self.edges[EdgeType.MO][prevIndex] = row['#']
             prevIndex = row['#']
-    
-    def add_rf_edges(self):
-        for read_id, read_node in self.nodes.items():
-            if not (read_node.action_type == NodeType.ATOMIC_READ or read_node.action_type == NodeType.ATOMIC_RMW):
-                continue
-            #find last write w
-            #add edge (w, id)
-            curr_id = read_id - 1
-            while curr_id > 0:
-                curr_node = self.nodes[curr_id]
-                if (curr_node.action_type == NodeType.ATOMIC_WRITE or 
-                        curr_node.action_type == NodeType.ATOMIC_RMW) and curr_node.mem_loc == read_node.mem_loc:
-                    self.edges[EdgeType.RF][curr_id] = read_id
-                    break
-                curr_id -= 1
 
     def add_fr_edges(self):
         for id in self.nodes.keys():
@@ -167,10 +151,11 @@ class Graph:
     def add_hb_edges(self):
         for id in self.nodes.keys():
             if id in self.edges[EdgeType.PO].keys():
-                destination_id = self.edges[EdgeType.PO][id]
-                if destination_id not in self.edges[EdgeType.HB].keys():
-                    self.edges[EdgeType.HB][id] = set()
-                self.edges[EdgeType.HB][id].add(destination_id)
+                destination_ids = self.edges[EdgeType.PO][id]
+                for destination_id in destination_ids:
+                    if destination_id not in self.edges[EdgeType.HB].keys():
+                        self.edges[EdgeType.HB][id] = set()
+                    self.edges[EdgeType.HB][id].add(destination_id)
 
             if id in self.edges[EdgeType.RF].keys():
                 destination_id = self.edges[EdgeType.RF][id]
@@ -179,7 +164,6 @@ class Graph:
                 self.edges[EdgeType.HB][id].add(destination_id)
 
         self.__hb_transitive()
-        print(self.edges[EdgeType.HB])
 
     def __hb_transitive(self):
         # Iterate untill no new relations are added
@@ -204,10 +188,36 @@ class Graph:
             # If no new relations were added, transitive property was exhausted
             if self.edges[EdgeType.HB] == hb_relation_copy:
                 return
-
-
-    def has_data_races():
-        pass
+    # Edges without HB relation
+    def add_conc_edges(self):
+        for src_node_id in self.nodes.keys():
+            self.edges[EdgeType.CONC][src_node_id] = set()
+            for dest_node_id in self.nodes.keys():
+                if not src_node_id in self.edges[EdgeType.HB] or not dest_node_id in self.edges[EdgeType.HB][src_node_id]:
+                    self.edges[EdgeType.CONC][src_node_id].add(dest_node_id)
+    def find_data_races(self):
+        race_count = 0
+        races = {}
+        read_actions = [NodeType.ATOMIC_READ]
+        write_actions = [NodeType.ATOMIC_WRITE]
+        accepted_actions = read_actions + write_actions
+        for src_node_id,dest_nodes in self.edges[EdgeType.CONC].items():
+            # Ignore edges that are both sequentially consistent
+            for dest_node_id in dest_nodes:
+                # Avoid being redundant
+                if dest_node_id <= src_node_id:
+                    continue
+                if self.nodes[src_node_id].mo == "seq_qst" and self.nodes[dest_node_id].mo == "seq_const":
+                    continue
+                if self.nodes[src_node_id].action_type not in accepted_actions:
+                    continue
+                if self.nodes[dest_node_id].action_type not in accepted_actions:
+                    continue
+                if self.nodes[src_node_id].action_type in write_actions or self.nodes[dest_node_id].action_type in write_actions:
+                    print("Data race found between: ", src_node_id, dest_node_id)
+                    race_count+=1
+                    races[src_node_id] = dest_node_id
+        print("Total data races found: ", race_count)
 
     def visualize(self):
         G = nx.MultiDiGraph()
@@ -235,12 +245,5 @@ class Graph:
         )
         plt.show()
 
-
 graph = Graph({},"../presentation_trace.csv")
-graph.add_po_edges()
-graph.add_rf_edges()
-graph.add_mo_edges()
-graph.add_fr_edges()
-graph.add_hb_edges()
-graph.visualize()
-
+graph.find_data_races()
