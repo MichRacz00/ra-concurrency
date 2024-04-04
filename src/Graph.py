@@ -151,10 +151,11 @@ class Graph:
     def add_hb_edges(self):
         for id in self.nodes.keys():
             if id in self.edges[EdgeType.PO].keys():
-                destination_id = self.edges[EdgeType.PO][id]
-                if destination_id not in self.edges[EdgeType.HB].keys():
-                    self.edges[EdgeType.HB][id] = set()
-                self.edges[EdgeType.HB][id].add(destination_id)
+                destination_ids = self.edges[EdgeType.PO][id]
+                for destination_id in destination_ids:
+                    if destination_id not in self.edges[EdgeType.HB].keys():
+                        self.edges[EdgeType.HB][id] = set()
+                    self.edges[EdgeType.HB][id].add(destination_id)
 
             if id in self.edges[EdgeType.RF].keys():
                 destination_id = self.edges[EdgeType.RF][id]
@@ -194,10 +195,8 @@ class Graph:
 
 graph = Graph({},"../data_race.csv")
 graph.add_po_edges()
-for origin in graph.edges[EdgeType.PO].keys():
-    print(origin, "->", graph.edges[EdgeType.PO][origin])
-#graph.add_rf_edges()
-#graph.add_mo_edges()
-#graph.add_fr_edges()
-#graph.add_hb_edges()
+graph.add_rf_edges()
+graph.add_mo_edges()
+graph.add_fr_edges()
+graph.add_hb_edges()
 
