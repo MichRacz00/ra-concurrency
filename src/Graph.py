@@ -5,7 +5,7 @@ import networkx as nx
 import matplotlib.pyplot as plt
 import itertools as it
 import math
-
+import argparse
 
 class EdgeType(Enum):
     MO = auto()
@@ -75,7 +75,7 @@ class Graph:
     rawData = None
     # Dict of all edges in graph edgetype->dict[in -> out]
     # TODO: Type does not checkout for HB as it can go to multiple
-    edges: dict[EdgeType, dict[int, int]] = {}
+    edges = {}
 
     def __init__(self, nodes, rawDataPath):
         self.nodes: dict[int, Node] = nodes
@@ -219,22 +219,23 @@ class Graph:
                     races[src_node_id] = dest_node_id
         print("Total data races found: ", race_count)
 
-    def visualize(self):
+    def visualize(self, nnodes):
         G = nx.MultiDiGraph()
         G.add_nodes_from(self.nodes.keys())
         G.add_edges_from(self.edges[EdgeType.MO].items(), label="MO", color="orange")
-        G.add_edges_from(self.edges[EdgeType.PO].items(), label="PO", color="black")
         G.add_edges_from(self.edges[EdgeType.RF].items(), label="RF", color="green")
         G.add_edges_from(self.edges[EdgeType.FR].items(), label="FR", color="red")
-        G.remove_nodes_from([i for i in range(10,len(self.nodes)+1)])
-        # G.add_edges_from(self.edges[EdgeType.HB].items(), label="HB")
-        # pos = nx.random_layout(G)
-        # colors = nx.get_edge_attributes(G, "color").values()
-        # nx.draw(G, pos, with_labels=True, edge_color=colors)
-        # #nx.draw_networkx_edge_labels(G, pos, nx.get_edge_attributes(G, "label"))
-        # plt.show()
+        po_edges = []
+        for src, dsts in self.edges[EdgeType.PO].items():
+            for dst in dsts:
+                po_edges.append((src, dst))
+        hb_edges = []
+        for src, dsts in self.edges[EdgeType.HB].items():
+            for dst in dsts:
+                hb_edges.append((src, dst))
+        G.add_edges_from(po_edges, label="PO", color="black")
+        G.remove_nodes_from([i for i in range(nnodes+1,len(self.nodes)+1)])
         connectionstyle = [f"arc3,rad={r}" for r in it.accumulate([0.15] * 4)]
-        # connectionstyle = [f"angle3,angleA={r}" for r in it.accumulate([30] * 4)]
 
         pos = nx.spring_layout(G, k=5/math.sqrt(len(G.nodes)))
         nx.draw_networkx_nodes(G, pos)
@@ -245,5 +246,14 @@ class Graph:
         )
         plt.show()
 
-graph = Graph({},"../presentation_trace.csv")
-graph.find_data_races()
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+            prog="Graph.py",
+            description="Build a graph and detects RA-dataraces from a c11tester trace")
+    parser.add_argument("-d", "--draw", type=int, nargs=1)
+    args = parser.parse_args()
+    graph = Graph({},"../presentation_trace.csv")
+    graph.find_data_races()
+    if args.draw != None:
+        graph.visualize(args.draw[0])
+
