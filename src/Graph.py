@@ -1,6 +1,7 @@
 from enum import Enum, auto
 import pandas as pd
 import copy
+import argparse
 
 class EdgeType(Enum):
     MO = auto()
@@ -226,6 +227,10 @@ class Graph:
                     races[src_node_id] = dest_node_id
         print("Total data races found: ", race_count)
 
-
-graph = Graph({},"../presentation_trace.csv")
+parser = argparse.ArgumentParser(
+                    prog='Graph.py',
+                    description='Detects data races')
+parser.add_argument("-i", "--input",type=str, help="Path to the input trace")
+args = parser.parse_args() 
+graph = Graph({},args.input)
 graph.find_data_races()
