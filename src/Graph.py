@@ -251,9 +251,9 @@ if __name__ == "__main__":
             prog="Graph.py",
             description="Build a graph and detects RA-dataraces from a c11tester trace")
     parser.add_argument("-d", "--draw", type=int, nargs=1)
+    parser.add_argument("-i", "--input",type=str, help="Path to the input trace")
     args = parser.parse_args()
-    graph = Graph({},"../presentation_trace.csv")
+    graph = Graph({},args.input)
     graph.find_data_races()
     if args.draw != None:
         graph.visualize(args.draw[0])
-
