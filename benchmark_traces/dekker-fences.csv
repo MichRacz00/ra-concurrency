@@ -1,0 +1,58 @@
+#,t,action_type,mo,location,value,wval,rf
+1,1,thread start,seq_cst,0x7f18e00120d0,-559038737,?,?
+2,1,atomic write,seq_cst,0x606148,0,?,?
+3,1,atomic write,seq_cst,0x606149,0,?,?
+4,1,atomic write,seq_cst,0x60614c,0,?,?
+5,1,pthread create,seq_cst,0x7ffe4ee820e8,1323835408,?,?
+6,2,thread start,seq_cst,0x7f18e1815ca0,-559038737,?,?
+7,1,pthread create,seq_cst,0x7ffe4ee820e0,1323835408,?,?
+8,3,thread start,seq_cst,0x7f18e1a17220,-559038737,?,?
+9,2,atomic write,relaxed,0x606148,1,?,?
+10,3,atomic write,relaxed,0x606149,1,?,?
+11,3,fence,seq_cst,0x7,-559038737,?,?
+12,2,atomic read,relaxed,0x606149,1,?,10
+13,2,atomic read,relaxed,0x60614c,0,?,4
+14,3,atomic read,relaxed,0x606148,1,?,9
+15,3,atomic read,relaxed,0x60614c,0,?,4
+16,3,atomic write,relaxed,0x606149,0,?,?
+17,3,atomic read,relaxed,0x60614c,0,?,4
+18,2,thread yield,seq_cst,0x7f18e1815ca0,-559038737,?,?
+19,2,atomic read,relaxed,0x606149,0,?,16
+20,2,fence,acquire,0x7,-559038737,?,?
+21,2,atomic write,relaxed,0x60614c,1,?,?
+22,3,thread yield,seq_cst,0x7f18e1a17220,-559038737,?,?
+23,3,atomic read,relaxed,0x60614c,0,?,4
+24,2,fence,release,0x7,-559038737,?,?
+25,2,atomic write,relaxed,0x606148,0,?,?
+26,2,thread finish,seq_cst,0x7f18e1815ca0,-559038737,?,?
+27,1,pthread join,seq_cst,0x7f18e1815ca0,2,?,?
+28,3,thread yield,seq_cst,0x7f18e1a17220,-559038737,?,?
+29,3,atomic read,relaxed,0x60614c,1,?,21
+30,3,atomic write,relaxed,0x606149,1,?,?
+31,3,fence,seq_cst,0x7,-559038737,?,?
+32,3,atomic read,relaxed,0x606148,1,?,9
+33,3,atomic read,relaxed,0x60614c,1,?,21
+34,3,thread yield,seq_cst,0x7f18e1a17220,-559038737,?,?
+35,3,atomic read,relaxed,0x606148,1,?,9
+36,3,atomic read,relaxed,0x60614c,1,?,21
+37,3,thread yield,seq_cst,0x7f18e1a17220,-559038737,?,?
+38,3,atomic read,relaxed,0x606148,1,?,9
+39,3,atomic read,relaxed,0x60614c,1,?,21
+40,3,thread yield,seq_cst,0x7f18e1a17220,-559038737,?,?
+41,3,atomic read,relaxed,0x606148,1,?,9
+42,3,atomic read,relaxed,0x60614c,1,?,21
+43,3,thread yield,seq_cst,0x7f18e1a17220,-559038737,?,?
+44,3,atomic read,relaxed,0x606148,1,?,9
+45,3,atomic read,relaxed,0x60614c,1,?,21
+46,3,thread yield,seq_cst,0x7f18e1a17220,-559038737,?,?
+47,3,atomic read,relaxed,0x606148,1,?,9
+48,3,atomic read,relaxed,0x60614c,1,?,21
+49,3,thread yield,seq_cst,0x7f18e1a17220,-559038737,?,?
+50,3,atomic read,relaxed,0x606148,0,?,25
+51,3,fence,acquire,0x7,-559038737,?,?
+52,3,atomic write,relaxed,0x60614c,0,?,?
+53,3,fence,release,0x7,-559038737,?,?
+54,3,atomic write,relaxed,0x606149,0,?,?
+55,3,thread finish,seq_cst,0x7f18e1a17220,-559038737,?,?
+56,1,pthread join,seq_cst,0x7f18e1a17220,3,?,?
+57,1,thread finish,seq_cst,0x7f18e00120d0,-559038737,?,?
