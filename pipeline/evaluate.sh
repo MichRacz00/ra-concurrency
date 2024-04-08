@@ -48,7 +48,7 @@ cd ./c11tester
 ../c11tester-benchmarks/clang++ -lpthread ../temp_prog.cc
 rm -rf ./csv
 mkdir csv
-export C11TESTER="-v3 -x'"$EXECUTION_COUNT"' "
+export C11TESTER='-v3 -x ${EXECUTION_COUNT}'
 export LD_LIBRARY_PATH=\$LD_LIBRARY_PATH:~/c11tester
 ./a.out
 rm ./data.csv
