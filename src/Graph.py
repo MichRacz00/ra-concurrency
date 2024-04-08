@@ -251,7 +251,7 @@ if __name__ == "__main__":
             prog="Graph.py",
             description="Build a graph and detects RA-dataraces from a c11tester trace")
     parser.add_argument("-d", "--draw", type=int, nargs=1)
-    parser.add_argument("-i", "--input",type=str, help="Path to the input trace")
+    parser.add_argument("-i", "--input",type=str, help="Path to the input trace", required=True)
     args = parser.parse_args()
     graph = Graph({},args.input)
     graph.find_data_races()
