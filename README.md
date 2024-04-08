@@ -12,7 +12,7 @@ Creating and using a venv is preferable as we are using a prerelease version of 
 ### Usage
 See `python Graph.py -h`
 
-### Visualization
+#### Visualization
 It is possible to get a visualization of the graph using the `--draw N` argument to draw the first `N` nodes or events.
 
 ## Pipeline running instructions
