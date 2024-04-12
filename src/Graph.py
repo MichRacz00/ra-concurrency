@@ -229,10 +229,10 @@ class Graph:
         for src, dsts in self.edges[EdgeType.PO].items():
             for dst in dsts:
                 po_edges.append((src, dst))
-        hb_edges = []
-        for src, dsts in self.edges[EdgeType.HB].items():
-            for dst in dsts:
-                hb_edges.append((src, dst))
+        # hb_edges = []
+        # for src, dsts in self.edges[EdgeType.HB].items():
+        #     for dst in dsts:
+        #         hb_edges.append((src, dst))
         G.add_edges_from(po_edges, label="PO", color="black")
         G.remove_nodes_from([i for i in range(nnodes+1,len(self.nodes)+1)])
         connectionstyle = [f"arc3,rad={r}" for r in it.accumulate([0.15] * 4)]
