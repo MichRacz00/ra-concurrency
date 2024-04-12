@@ -87,7 +87,7 @@ class Graph:
     def init_edges(self):
         self.add_po_edges()
         self.add_mo_edges()
-        self.add_fr_edges()
+        # self.add_fr_edges()
         self.add_hb_edges()
         self.add_conc_edges()
 
@@ -96,7 +96,9 @@ class Graph:
         for index, row in graphDF.iterrows():
             self.nodes[row["#"]] = Node(row["#"],{},NodeType.from_string(row["action_type"]),row["location"],row["t"],row["value"],row["mo"])
             if row["rf"] != "?":
-                self.edges[EdgeType.RF][row["#"]] = int(row["rf"])  
+                if row["#"] not in self.edges[EdgeType.HB].keys():
+                    self.edges[EdgeType.RF][row["#"]] = set()
+                self.edges[EdgeType.RF][row["#"]].add(int(row["rf"]))
 
     def add_po_edges(self):
         # add
@@ -143,10 +145,10 @@ class Graph:
             self.edges[EdgeType.MO][prevIndex] = row['#']
             prevIndex = row['#']
 
-    def add_fr_edges(self):
-        for id in self.nodes.keys():
-            if id in self.edges[EdgeType.RF] and id in self.edges[EdgeType.MO]:
-                self.edges[EdgeType.FR][self.edges[EdgeType.RF][id]] = self.edges[EdgeType.MO][id]
+    # def add_fr_edges(self):
+    #     for id in self.nodes.keys():
+    #         if id in self.edges[EdgeType.RF] and id in self.edges[EdgeType.MO]:
+    #             self.edges[EdgeType.FR][self.edges[EdgeType.RF][id]] = self.edges[EdgeType.MO][id]
 
     def add_hb_edges(self):
         for id in self.nodes.keys():
@@ -158,10 +160,11 @@ class Graph:
                     self.edges[EdgeType.HB][id].add(destination_id)
 
             if id in self.edges[EdgeType.RF].keys():
-                destination_id = self.edges[EdgeType.RF][id]
-                if destination_id not in self.edges[EdgeType.HB].keys():
-                    self.edges[EdgeType.HB][id] = set()
-                self.edges[EdgeType.HB][id].add(destination_id)
+                destination_ids = self.edges[EdgeType.RF][id]
+                for destination_id in destination_ids:
+                    if destination_id not in self.edges[EdgeType.HB].keys():
+                        self.edges[EdgeType.HB][id] = set()
+                    self.edges[EdgeType.HB][id].add(destination_id)
 
         self.__hb_transitive()
 
@@ -223,17 +226,27 @@ class Graph:
         G = nx.MultiDiGraph()
         G.add_nodes_from(self.nodes.keys())
         G.add_edges_from(self.edges[EdgeType.MO].items(), label="MO", color="orange")
-        G.add_edges_from(self.edges[EdgeType.RF].items(), label="RF", color="green")
-        G.add_edges_from(self.edges[EdgeType.FR].items(), label="FR", color="red")
+        conc_edges = []
+        for src, dsts in self.edges[EdgeType.CONC].items():
+            for dst in dsts:
+                conc_edges.append((src, dst))
+        G.add_edges_from(conc_edges, label="RF", color="blue")
+        rf_edges = []
+        for src, dsts in self.edges[EdgeType.RF].items():
+            for dst in dsts:
+                rf_edges.append((src, dst))
+        G.add_edges_from(rf_edges, label="RF", color="green")
+        # G.add_edges_from(self.edges[EdgeType.FR].items(), label="FR", color="red")
         po_edges = []
         for src, dsts in self.edges[EdgeType.PO].items():
             for dst in dsts:
                 po_edges.append((src, dst))
+        G.add_edges_from(po_edges, label="PO", color="black")
         # hb_edges = []
         # for src, dsts in self.edges[EdgeType.HB].items():
         #     for dst in dsts:
         #         hb_edges.append((src, dst))
-        G.add_edges_from(po_edges, label="PO", color="black")
+        # G.add_edges_from(hb_edges, label="HB", color="purple")
         G.remove_nodes_from([i for i in range(nnodes+1,len(self.nodes)+1)])
         connectionstyle = [f"arc3,rad={r}" for r in it.accumulate([0.15] * 4)]
 
@@ -257,3 +270,6 @@ if __name__ == "__main__":
     graph.find_data_races()
     if args.draw != None:
         graph.visualize(args.draw[0])
+    print(graph.edges[EdgeType.HB])
+    print("=" * 80)
+    print(graph.edges[EdgeType.CONC])
