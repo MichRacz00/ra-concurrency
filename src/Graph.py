@@ -156,6 +156,11 @@ class Graph:
             if id in self.edges[EdgeType.PO].keys():
                 destination_ids = self.edges[EdgeType.PO][id]
                 for destination_id in destination_ids:
+                    
+                    # remove self loops
+                    if destination_id == id:
+                        continue
+
                     if id not in self.edges[EdgeType.HB].keys():
                         self.edges[EdgeType.HB][id] = set()
                     self.edges[EdgeType.HB][id].add(destination_id)
