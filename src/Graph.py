@@ -156,16 +156,17 @@ class Graph:
             if id in self.edges[EdgeType.PO].keys():
                 destination_ids = self.edges[EdgeType.PO][id]
                 for destination_id in destination_ids:
-                    if destination_id not in self.edges[EdgeType.HB].keys():
+                    if id not in self.edges[EdgeType.HB].keys():
                         self.edges[EdgeType.HB][id] = set()
                     self.edges[EdgeType.HB][id].add(destination_id)
 
             if id in self.edges[EdgeType.RF].keys():
                 destination_ids = self.edges[EdgeType.RF][id]
                 for destination_id in destination_ids:
-                    if destination_id not in self.edges[EdgeType.HB].keys():
+                    if id not in self.edges[EdgeType.HB].keys():
                         self.edges[EdgeType.HB][id] = set()
                     self.edges[EdgeType.HB][id].add(destination_id)
+                    print(self.edges[EdgeType.HB][id])
 
         self.__hb_transitive()
 
@@ -270,7 +271,7 @@ if __name__ == "__main__":
     graph = Graph({},args.input)
     graph.find_data_races()
     print(graph.edges[EdgeType.RF])
-    # print(graph.edges[EdgeType.HB])
+    print(graph.edges[EdgeType.HB])
     # print("=" * 80)
     # print(graph.edges[EdgeType.CONC])
     if args.draw != None:
