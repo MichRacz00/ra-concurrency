@@ -96,9 +96,10 @@ class Graph:
         for index, row in graphDF.iterrows():
             self.nodes[row["#"]] = Node(row["#"],{},NodeType.from_string(row["action_type"]),row["location"],row["t"],row["value"],row["mo"])
             if row["rf"] != "?":
-                if row["#"] not in self.edges[EdgeType.HB].keys():
-                    self.edges[EdgeType.RF][row["#"]] = set()
-                self.edges[EdgeType.RF][row["#"]].add(int(row["rf"]))
+                id = int(row["rf"])
+                if id not in self.edges[EdgeType.RF].keys():
+                    self.edges[EdgeType.RF][id] = set()
+                self.edges[EdgeType.RF][id].add(int(row["#"]))
 
     def add_po_edges(self):
         # add
@@ -268,8 +269,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
     graph = Graph({},args.input)
     graph.find_data_races()
+    print(graph.edges[EdgeType.RF])
+    # print(graph.edges[EdgeType.HB])
+    # print("=" * 80)
+    # print(graph.edges[EdgeType.CONC])
     if args.draw != None:
         graph.visualize(args.draw[0])
-    print(graph.edges[EdgeType.HB])
-    print("=" * 80)
-    print(graph.edges[EdgeType.CONC])
