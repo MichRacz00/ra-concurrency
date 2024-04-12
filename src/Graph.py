@@ -8,10 +8,8 @@ import math
 import argparse
 
 class EdgeType(Enum):
-    MO = auto()
     PO = auto()
     RF = auto()
-    FR = auto()
     HB = auto()
     CONC = auto()
 
@@ -75,19 +73,17 @@ class Graph:
     rawData = None
     # Dict of all edges in graph edgetype->dict[in -> out]
     # TODO: Type does not checkout for HB as it can go to multiple
-    edges = {}
+    edges: dict[EdgeType, dict[int,set[int]]] = {}
 
     def __init__(self, nodes, rawDataPath):
         self.nodes: dict[int, Node] = nodes
         self.rawData = pd.read_csv(rawDataPath)
-        self.edges = {EdgeType.PO: {}, EdgeType.MO: {}, EdgeType.RF: {}, EdgeType.FR: {}, EdgeType.HB: {}, EdgeType.CONC: {}}
+        self.edges = {EdgeType.PO: {}, EdgeType.RF: {}, EdgeType.HB: {}, EdgeType.CONC: {}}
         self.add_nodes(self.rawData)
         self.init_edges()
     
     def init_edges(self):
         self.add_po_edges()
-        self.add_mo_edges()
-        # self.add_fr_edges()
         self.add_hb_edges()
         self.add_conc_edges()
 
@@ -146,11 +142,6 @@ class Graph:
             self.edges[EdgeType.MO][prevIndex] = row['#']
             prevIndex = row['#']
 
-    # def add_fr_edges(self):
-    #     for id in self.nodes.keys():
-    #         if id in self.edges[EdgeType.RF] and id in self.edges[EdgeType.MO]:
-    #             self.edges[EdgeType.FR][self.edges[EdgeType.RF][id]] = self.edges[EdgeType.MO][id]
-
     def add_hb_edges(self):
         for id in self.nodes.keys():
             if id in self.edges[EdgeType.PO].keys():
@@ -171,7 +162,7 @@ class Graph:
                     if id not in self.edges[EdgeType.HB].keys():
                         self.edges[EdgeType.HB][id] = set()
                     self.edges[EdgeType.HB][id].add(destination_id)
-                    print(self.edges[EdgeType.HB][id])
+                    # print(self.edges[EdgeType.HB][id])
 
         self.__hb_transitive()
 
@@ -201,15 +192,21 @@ class Graph:
     # Edges without HB relation
     def add_conc_edges(self):
         for src_node_id in self.nodes.keys():
-            self.edges[EdgeType.CONC][src_node_id] = set()
+            if src_node_id not in self.edges[EdgeType.CONC].keys():
+                self.edges[EdgeType.CONC][src_node_id] = set()
             for dest_node_id in self.nodes.keys():
+                if dest_node_id not in self.edges[EdgeType.CONC].keys():
+                    self.edges[EdgeType.CONC][dest_node_id] = set()
+                if src_node_id == dest_node_id:
+                    continue
                 if not src_node_id in self.edges[EdgeType.HB] or not dest_node_id in self.edges[EdgeType.HB][src_node_id]:
                     self.edges[EdgeType.CONC][src_node_id].add(dest_node_id)
+                    self.edges[EdgeType.CONC][dest_node_id].add(src_node_id)
     def find_data_races(self):
         race_count = 0
         races = {}
-        read_actions = [NodeType.ATOMIC_READ]
-        write_actions = [NodeType.ATOMIC_WRITE]
+        read_actions = [NodeType.ATOMIC_READ, NodeType.ATOMIC_RMW]
+        write_actions = [NodeType.ATOMIC_WRITE, NodeType.ATOMIC_RMW]
         accepted_actions = read_actions + write_actions
         for src_node_id,dest_nodes in self.edges[EdgeType.CONC].items():
             # Ignore edges that are both sequentially consistent
@@ -217,7 +214,7 @@ class Graph:
                 # Avoid being redundant
                 if dest_node_id <= src_node_id:
                     continue
-                if self.nodes[src_node_id].mo == "seq_qst" and self.nodes[dest_node_id].mo == "seq_const":
+                if self.nodes[src_node_id].mo == "seq_cst" and self.nodes[dest_node_id].mo == "seq_cst":
                     continue
                 if self.nodes[src_node_id].action_type not in accepted_actions:
                     continue
@@ -232,18 +229,16 @@ class Graph:
     def visualize(self, nnodes):
         G = nx.MultiDiGraph()
         G.add_nodes_from(self.nodes.keys())
-        G.add_edges_from(self.edges[EdgeType.MO].items(), label="MO", color="orange")
-        conc_edges = []
-        for src, dsts in self.edges[EdgeType.CONC].items():
-            for dst in dsts:
-                conc_edges.append((src, dst))
-        G.add_edges_from(conc_edges, label="RF", color="blue")
+        # conc_edges = []
+        # for src, dsts in self.edges[EdgeType.CONC].items():
+        #     for dst in dsts:
+        #         conc_edges.append((src, dst))
+        # G.add_edges_from(conc_edges, label="RF", color="blue")
         rf_edges = []
         for src, dsts in self.edges[EdgeType.RF].items():
             for dst in dsts:
                 rf_edges.append((src, dst))
         G.add_edges_from(rf_edges, label="RF", color="green")
-        # G.add_edges_from(self.edges[EdgeType.FR].items(), label="FR", color="red")
         po_edges = []
         for src, dsts in self.edges[EdgeType.PO].items():
             for dst in dsts:
@@ -275,9 +270,5 @@ if __name__ == "__main__":
     args = parser.parse_args()
     graph = Graph({},args.input)
     graph.find_data_races()
-    print(graph.edges[EdgeType.RF])
-    print(graph.edges[EdgeType.HB])
-    # print("=" * 80)
-    # print(graph.edges[EdgeType.CONC])
     if args.draw != None:
         graph.visualize(args.draw[0])
