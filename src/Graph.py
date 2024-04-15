@@ -80,10 +80,11 @@ class Graph:
         self.rawData = pd.read_csv(rawDataPath)
         self.edges = {EdgeType.PO: {}, EdgeType.RF: {}, EdgeType.HB: {}, EdgeType.CONC: {}}
         self.add_nodes(self.rawData)
-        self.init_edges()
+        self.init_edges(self.rawData)
     
-    def init_edges(self):
+    def init_edges(self, graphDF):
         self.add_po_edges()
+        self.add_rf_locks(graphDF)
         self.add_hb_edges()
         self.add_conc_edges()
 
@@ -96,6 +97,19 @@ class Graph:
                 if id not in self.edges[EdgeType.RF].keys():
                     self.edges[EdgeType.RF][id] = set()
                 self.edges[EdgeType.RF][id].add(int(row["#"]))
+
+    def add_rf_locks(self, graphDF):
+        lockDF = graphDF[(graphDF["action_type"] == NodeType.ATOMIC_LOCK.value) | (graphDF["action_type"] == NodeType.ATOMIC_UNLOCK.value)][["#", "action_type", "location"]]
+        lock_actions = lockDF.to_dict('records')
+        for i, node in enumerate(lock_actions):
+            if node["action_type"] == NodeType.ATOMIC_UNLOCK.value:
+                for j in range(i+1,len(lock_actions)):
+                    if lock_actions[j]["action_type"] == NodeType.ATOMIC_LOCK.value and (
+                            lock_actions[i]["location"] == lock_actions[j]["location"]):
+                        if lock_actions[i]["#"] not in self.edges[EdgeType.RF]:
+                            self.edges[EdgeType.RF][lock_actions[i]["#"]] = set()
+                        self.edges[EdgeType.RF][lock_actions[i]["#"]].add(lock_actions[j]["#"])
+                        break
 
     def add_po_edges(self):
         # add
@@ -199,7 +213,9 @@ class Graph:
                     self.edges[EdgeType.CONC][dest_node_id] = set()
                 if src_node_id == dest_node_id:
                     continue
-                if not src_node_id in self.edges[EdgeType.HB] or not dest_node_id in self.edges[EdgeType.HB][src_node_id]:
+                if ((src_node_id not in self.edges[EdgeType.HB]) or (dest_node_id not in self.edges[EdgeType.HB][src_node_id])) and (
+                        (dest_node_id not in self.edges[EdgeType.HB]) or (src_node_id not in self.edges[EdgeType.HB][dest_node_id])
+                        ):
                     self.edges[EdgeType.CONC][src_node_id].add(dest_node_id)
                     self.edges[EdgeType.CONC][dest_node_id].add(src_node_id)
     def find_data_races(self):

@@ -12,8 +12,8 @@ std::mutex mtx;
 void increment_shared_data(int id, int increments) {
     for (int i = 0; i < increments; ++i) {
         mtx.lock();
-        int tmp = shared_data.load() + 1;
-        shared_data.store(tmp);
+        int tmp = shared_data.load(std::memory_order_acq_rel);
+        shared_data.store(tmp + 1, std::memory_order_acq_rel);
         mtx.unlock();
     }
 }
