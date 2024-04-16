@@ -23,8 +23,9 @@ The script requires the [vagrant-scp](https://github.com/invernizzi/vagrant-scp)
 Before running the command it is recommended to make a backup of your VM files.
 To generate the output of a program, make sure your working directory is `pipeline` then run:
 ```
-./evaluate.sh -v <vm_dir_path> -i <program_path> -x <execution_count>
+./evaluate.sh -v <vm_dir_path> -i <program_path> -x <execution_count> -m
 ```
+The `-m` flag is used to indicate a path used in the virtual machine.
 TODO: Add option for custom output directories
 ### File structure
 - `/pipeline/results` - identified data races after running ./evaluate.sh
@@ -32,3 +33,4 @@ TODO: Add option for custom output directories
 - `/pipeline/replacement_file` - files that need to be changed in the vagrant VM to allow custom number of executions/verbose output
 ### prep_vagrant.sh
 The `prep_vagrant.sh` script is used to prepare the files in the vagrant VM for proper output when executing a program. In principle, this script has to be run only once per VM, as long as no changes are made to the ~/c11tester directory within the VM. Right now, it is run at the beggining of evaluate.sh, to avoid errors.
+The `calculate_total.sh` script is used to print the data race stats based on the traces of c11 tester and the output of the algorithm.

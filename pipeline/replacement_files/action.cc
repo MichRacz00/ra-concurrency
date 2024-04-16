@@ -759,6 +759,8 @@ void ModelAction::print() const
 			cv->print();
 		} else
 			model_print("\n");
+		//this for the data_race field
+		file << ",?";
 		file << "\n";
 		file.close();
 	} else {

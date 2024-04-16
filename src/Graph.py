@@ -78,6 +78,11 @@ class Graph:
     def __init__(self, nodes, rawDataPath):
         self.nodes: dict[int, Node] = nodes
         self.rawData = pd.read_csv(rawDataPath)
+        self.traceHasDataRace = self.rawData.iloc[-1]["data_race"]
+        print("Data race in trace:",self.traceHasDataRace)
+        self.rawData = self.rawData[:-1]
+        self.rawData["#"] = self.rawData["#"].astype(int)
+
         self.edges = {EdgeType.PO: {}, EdgeType.RF: {}, EdgeType.HB: {}, EdgeType.CONC: {}}
         self.add_nodes(self.rawData)
         self.init_edges(self.rawData)
@@ -135,7 +140,6 @@ class Graph:
         splits = {}
         for node_no in self.nodes.keys():
             node = self.nodes[node_no]
-
             if node.action_type == NodeType.PTHREAD_CREATE:
                 for prev_node_no in range(node_no, len(self.nodes)):
                     if self.nodes[prev_node_no].action_type == NodeType.THREAD_START:
@@ -235,6 +239,8 @@ class Graph:
                 if self.nodes[src_node_id].action_type not in accepted_actions:
                     continue
                 if self.nodes[dest_node_id].action_type not in accepted_actions:
+                    continue
+                if self.nodes[dest_node_id].mem_loc != self.nodes[src_node_id].mem_loc:
                     continue
                 if self.nodes[src_node_id].action_type in write_actions or self.nodes[dest_node_id].action_type in write_actions:
                     print("Data race found between: ", src_node_id, dest_node_id)
