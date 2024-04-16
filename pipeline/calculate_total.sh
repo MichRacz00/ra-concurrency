@@ -38,8 +38,11 @@ for item in "$traces_dir"/*; do
               exit 1
             fi
             data_race_in_algorithm=$(tail -n 1 "./results/$dirname/$filename_without_ext.out" | rev | cut -d' ' -f1 | rev)
-            # echo $data_race_in_algorithm
-            ((algorithm_stats["$dirname"]+=$data_race_in_algorithm>0))
+            # echo $data_race_in_algorithm 
+            if (( data_race_in_algorithm > 0 )); then
+                data_race_in_algorithm=1
+            fi
+            ((algorithm_stats["$dirname"]+=$data_race_in_algorithm))
             if [ "$data_race_in_algorithm" -ne "$data_race_in_trace" ]; then
                 echo "Data race mistmatch in $dirname for execution $filename_without_ext"
             fi
