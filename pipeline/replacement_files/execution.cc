@@ -5,6 +5,7 @@
 #include <errno.h>
 #include <iostream>
 #include <fstream>
+#include <cstdio>
 
 #include "model.h"
 #include "execution.h"
@@ -1519,9 +1520,9 @@ static void print_list(action_list_t *list)
 	unsigned int hash = 0;
 	std::ofstream file("data.csv");
 	if (file.is_open()) {
-                file << "#,t,action_type,mo,location,value,wval,rf\n";
+                file << "#,t,action_type,mo,location,value,wval,rf,data_race\n";
        		file.close(); 
-		model_print("Data writtenn to data.csv succesfully.\n");
+		model_print("Data written to data.csv succesfully.\n");
 	} else {
                 model_print("Unable to open file for writing.\n");
 	}
@@ -1540,7 +1541,15 @@ static void print_list(action_list_t *list)
 	if (!destinationFile) {
         	model_print("Failed to open destination file for writing.\n");
     	}
+	std::ifstream infile("data_race_exists");
+	int dataRaceExists = infile.good();
+	if (remove("data_race_exists") != 0) {
+        perror("Error deleting file");
+    } else {
+        puts("File successfully deleted");
+    }
 	destinationFile << sourceFile.rdbuf();
+	destinationFile << "?,?,?,?,?,?,?,?," << dataRaceExists << "\n";
 	destinationFile.close();
 	sourceFile.close();
 	model_print("HASH %u\n", hash);
