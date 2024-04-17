@@ -13,6 +13,7 @@ class EdgeType(Enum):
     HB = auto()
     CONC = auto()
 
+# Taken from c11tester
 class NodeType(Enum):
     THREAD_CREATE = "thread create"
     THREAD_START = "thread start"
@@ -248,14 +249,10 @@ class Graph:
                     races[src_node_id] = dest_node_id
         print("Total data races found: ", race_count)
 
+    #Draw the first nnodes nodes and show rf and po relations
     def visualize(self, nnodes):
         G = nx.MultiDiGraph()
         G.add_nodes_from(self.nodes.keys())
-        # conc_edges = []
-        # for src, dsts in self.edges[EdgeType.CONC].items():
-        #     for dst in dsts:
-        #         conc_edges.append((src, dst))
-        # G.add_edges_from(conc_edges, label="RF", color="blue")
         rf_edges = []
         for src, dsts in self.edges[EdgeType.RF].items():
             for dst in dsts:
@@ -266,11 +263,6 @@ class Graph:
             for dst in dsts:
                 po_edges.append((src, dst))
         G.add_edges_from(po_edges, label="PO", color="black")
-        # hb_edges = []
-        # for src, dsts in self.edges[EdgeType.HB].items():
-        #     for dst in dsts:
-        #         hb_edges.append((src, dst))
-        # G.add_edges_from(hb_edges, label="HB", color="purple")
         G.remove_nodes_from([i for i in range(nnodes+1,len(self.nodes)+1)])
         connectionstyle = [f"arc3,rad={r}" for r in it.accumulate([0.15] * 4)]
 
