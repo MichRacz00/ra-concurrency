@@ -26,6 +26,7 @@ To generate the output of a program, make sure your working directory is `pipeli
 ./evaluate.sh -v <vm_dir_path> -i <program_path> -x <execution_count> -m
 ```
 The `-m` flag is used to indicate a path used in the virtual machine.
+Example: ./evaluate.sh -v ~/testing/c11tester-vagrant -i /c11tester-benchmarks/cdschecker_modified_benchmarks/tsan11-missingbug/rwlock-test -x 100 -m
 TODO: Add option for custom output directories
 ### File structure
 - `/pipeline/results` - identified data races after running ./evaluate.sh

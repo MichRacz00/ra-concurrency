@@ -6,6 +6,8 @@
 #include <iostream>
 #include <fstream>
 #include <cstdio>
+#include <chrono>
+#include <sstream>
 
 #include "model.h"
 #include "execution.h"
@@ -1537,17 +1539,23 @@ static void print_list(action_list_t *list)
 	if (!sourceFile) {
         	model_print("Failed to open source file for reading.\n");
     	}
-	std::ofstream destinationFile("./csv/" + std::to_string(hash)+".csv", std::ios::binary);
+	auto now = std::chrono::system_clock::now();
+    auto now_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(now.time_since_epoch());
+	std::ostringstream oss;
+	oss << now_ns.count();
+	std::ofstream destinationFile("./csv/" + std::to_string(hash)+"_"+oss.str()+".csv", std::ios::binary);
 	if (!destinationFile) {
         	model_print("Failed to open destination file for writing.\n");
     	}
 	std::ifstream infile("data_race_exists");
 	int dataRaceExists = infile.good();
-	if (remove("data_race_exists") != 0) {
-        perror("Error deleting file");
-    } else {
-        puts("File successfully deleted");
-    }
+	if (dataRaceExists) {
+		if (remove("data_race_exists") != 0) {
+			model_print("Error deleting file\n");
+		} else {
+			model_print("File successfully deleted\n");
+		}
+	}
 	destinationFile << sourceFile.rdbuf();
 	destinationFile << "?,?,?,?,?,?,?,?," << dataRaceExists << "\n";
 	destinationFile.close();
