@@ -148,19 +148,6 @@ class Graph:
                         break
         return splits
 
-    def add_mo_edges(self):
-        filtered_df = self.rawData[self.rawData['action_type'].isin([NodeType.ATOMIC_WRITE.value, NodeType.ATOMIC_RMW.value])]
-        prevIndex = -1
-        for index, row in filtered_df.iterrows():
-            if prevIndex == -1:
-                prevIndex = row['#']
-                continue
-
-            if not row['#'] in self.nodes[prevIndex].edges:
-                self.nodes[prevIndex].edges[row['#']] = {}
-            self.edges[EdgeType.MO][prevIndex] = row['#']
-            prevIndex = row['#']
-
     def add_hb_edges(self):
         for id in self.nodes.keys():
             if id in self.edges[EdgeType.PO].keys():
