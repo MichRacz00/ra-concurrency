@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import itertools as it
 import math
 import argparse
+import time
 
 class EdgeType(Enum):
     PO = auto()
@@ -289,8 +290,10 @@ if __name__ == "__main__":
             description="Build a graph and detects RA-dataraces from a c11tester trace")
     parser.add_argument("-d", "--draw", type=int, nargs=1)
     parser.add_argument("-i", "--input",type=str, help="Path to the input trace", required=True)
+    start_time = time.time()
     args = parser.parse_args()
     graph = Graph({},args.input)
     graph.find_data_races()
+    print("Elapsed time:", time.time() - start_time)
     if args.draw != None:
         graph.visualize(args.draw[0])
