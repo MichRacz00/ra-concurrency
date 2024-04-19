@@ -1,0 +1,25 @@
+#,t,action_type,mo,location,value,wval,rf
+1,1,thread start,seq_cst,0x7ff83bfcf0d0,-559038737,?,?
+2,1,atomic write,seq_cst,0x605140,1048576,?,?
+3,1,pthread create,seq_cst,0x7ffe8179edf8,-2122715872,?,?
+4,2,thread start,seq_cst,0x7ff83d7d15a0,-559038737,?,?
+5,1,pthread create,seq_cst,0x7ffe8179edf0,-2122715872,?,?
+6,3,thread start,seq_cst,0x7ff83d9d2b20,-559038737,?,?
+7,3,atomic rmw,acquire,0x605140,1048576,1048575,2
+8,3,atomic rmw,release,0x605140,1048575,1048576,7
+9,3,atomic rmw,acquire,0x605140,1048576,0,8
+10,2,atomic rmw,acquire,0x605140,0,-1,9
+11,3,thread yield,seq_cst,0x7ff83d9d2b20,-559038737,?,?
+12,3,atomic rmw,release,0x605140,-1,1048575,10
+13,3,thread finish,seq_cst,0x7ff83d9d2b20,-559038737,?,?
+14,2,atomic rmw,relaxed,0x605140,1048575,1048576,12
+15,2,atomic read,relaxed,0x605140,1048576,?,14
+16,2,atomic rmw,relaxed,0x605140,1048576,1048575,14
+17,2,atomic rmw,release,0x605140,1048575,1048576,16
+18,2,atomic rmw,acquire,0x605140,1048576,0,17
+19,2,thread yield,seq_cst,0x7ff83d7d15a0,-559038737,?,?
+20,2,atomic rmw,release,0x605140,0,1048576,18
+21,2,thread finish,seq_cst,0x7ff83d7d15a0,-559038737,?,?
+22,1,pthread join,seq_cst,0x7ff83d7d15a0,2,?,?
+23,1,pthread join,seq_cst,0x7ff83d9d2b20,3,?,?
+24,1,thread finish,seq_cst,0x7ff83bfcf0d0,-559038737,?,?

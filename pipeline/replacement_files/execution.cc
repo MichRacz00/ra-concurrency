@@ -1549,13 +1549,11 @@ static void print_list(action_list_t *list)
     	}
 	std::ifstream infile("data_race_exists");
 	int dataRaceExists = infile.good();
-	if (dataRaceExists) {
-		if (remove("data_race_exists") != 0) {
-			model_print("Error deleting file\n");
-		} else {
-			model_print("File successfully deleted\n");
-		}
-	}
+	if (remove("data_race_exists") != 0) {
+        perror("Error deleting file");
+    } else {
+        puts("File successfully deleted");
+    }
 	destinationFile << sourceFile.rdbuf();
 	destinationFile << "?,?,?,?,?,?,?,?," << dataRaceExists << "\n";
 	destinationFile.close();

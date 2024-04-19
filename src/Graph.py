@@ -14,6 +14,7 @@ class EdgeType(Enum):
     HB = auto()
     CONC = auto()
 
+# Taken from c11tester
 class NodeType(Enum):
     THREAD_CREATE = "thread create"
     THREAD_START = "thread start"
@@ -148,19 +149,6 @@ class Graph:
                         break
         return splits
 
-    def add_mo_edges(self):
-        filtered_df = self.rawData[self.rawData['action_type'].isin([NodeType.ATOMIC_WRITE.value, NodeType.ATOMIC_RMW.value])]
-        prevIndex = -1
-        for index, row in filtered_df.iterrows():
-            if prevIndex == -1:
-                prevIndex = row['#']
-                continue
-
-            if not row['#'] in self.nodes[prevIndex].edges:
-                self.nodes[prevIndex].edges[row['#']] = {}
-            self.edges[EdgeType.MO][prevIndex] = row['#']
-            prevIndex = row['#']
-
     def add_hb_edges(self):
         for id in self.nodes.keys():
             if id in self.edges[EdgeType.PO].keys():
@@ -249,14 +237,10 @@ class Graph:
                     races[src_node_id] = dest_node_id
         print("Total data races found: ", race_count)
 
+    #Draw the first nnodes nodes and show rf and po relations
     def visualize(self, nnodes):
         G = nx.MultiDiGraph()
         G.add_nodes_from(self.nodes.keys())
-        # conc_edges = []
-        # for src, dsts in self.edges[EdgeType.CONC].items():
-        #     for dst in dsts:
-        #         conc_edges.append((src, dst))
-        # G.add_edges_from(conc_edges, label="RF", color="blue")
         rf_edges = []
         for src, dsts in self.edges[EdgeType.RF].items():
             for dst in dsts:
